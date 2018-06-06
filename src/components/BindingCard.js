@@ -36,6 +36,8 @@ class BindingCard extends Component {
                 loading: false
             },
         }
+        this._loadGoogleAuthorizationUrl = this._loadGoogleAuthorizationUrl.bind(this);
+        this._loadOfficeAuthorizationUrl = this._loadOfficeAuthorizationUrl.bind(this);
     }
     componentDidMount(){
         window.addEventListener('message', (data) => {            
@@ -52,6 +54,11 @@ class BindingCard extends Component {
                 });
             }
         })
+        this._loadGoogleAuthorizationUrl();
+        this._loadOfficeAuthorizationUrl();
+    }
+
+    _loadGoogleAuthorizationUrl() {
         fetch('/google/getssourl').then(res => res.json()).then(res => {
             if(res.code === 0) {
                 const { islogin: enabled, url: authorizationUrl } = res.result;
@@ -68,6 +75,9 @@ class BindingCard extends Component {
                 alert('network error')
             }
         });
+    }
+
+    _loadOfficeAuthorizationUrl() {
         fetch('/office365/getssourl').then(res => res.json()).then(res => {
             if(res.code === 0) {
                 const { islogin: enabled, url: authorizationUrl } = res.result;
@@ -91,16 +101,44 @@ class BindingCard extends Component {
         console.log(this.authorizationWindow);
     }
 
+    _unbindAccount(accountType) {
+        let isGoogleAccount = accountType === activeTarget[0];
+        let unbindUrl = isGoogleAccount ? '/google/clear' : '/office365/clear';
+        let accountInState = isGoogleAccount ? 'googleCalendar' : 'office365';
+        let onEnabled = isGoogleAccount ? this.props.onGoogleBinding : this.props.onOfficeBinding;
+        let authorizationUrlInitFn = isGoogleAccount ? this._loadGoogleAuthorizationUrl : this._loadOfficeAuthorizationUrl;
+        
+        this.setState({
+            [accountInState]: {
+                loading: true
+            }
+        })
+        fetch(unbindUrl).then( res => res.json() ).then( res => {
+            if(res.code === 0) {
+                this.setState({
+                    [accountInState]: {
+                        enabled: false,
+                        loading: false
+                    }
+                });
+                onEnabled([]);
+                authorizationUrlInitFn();
+            }else{
+                console.error('error', err);
+            }
+        } );
+    }
+
     authorizeGoogleAccount(event) {
         event 
         ? this._openChildWindow(this.state.googleCalendar.authorizationUrl, activeTarget[0])
-        : alert('sorry, unbinding is currently not supprted.');
+        : this._unbindAccount(activeTarget[0]);
     }
 
     authorizeOffice365Account(event) {
         event 
         ? this._openChildWindow(this.state.office365.authorizationUrl, activeTarget[1])
-        : alert('sorry, unbinding is currently not supprtted.');
+        : this._unbindAccount(activeTarget[1]);
     }
 
     render() {

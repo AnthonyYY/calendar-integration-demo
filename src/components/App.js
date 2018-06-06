@@ -15,16 +15,26 @@ export default class App extends Component {
         this.loadOffice365Calendar = this.loadOffice365Calendar.bind(this);
     }
 
-    loadGoogleCalendar() {
-        fetch('/google/getcalender').then(res => res.json()).then(res => {
+    loadGoogleCalendar(schedules) {
+        console.log(schedules);
+        schedules 
+        ? this.setState({
+            googleCalendar: schedules
+        })
+        : fetch('/google/getcalender').then(res => res.json()).then(res => {
             this.setState({
                 googleCalendar: res.result
             });
         });
     }
 
-    loadOffice365Calendar() {
-        fetch('/office365/getcalender').then(res => res.json()).then(res => {
+    loadOffice365Calendar(schedules) {
+        console.log(schedules);
+        schedules 
+        ? this.setState({
+            office365Calendar: schedules
+        })
+        : fetch('/office365/getcalender').then(res => res.json()).then(res => {
             this.setState({
                 office365Calendar: res.result
             });
